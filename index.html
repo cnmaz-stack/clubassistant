@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Club de voile – Navigation libre &amp; maintenance</title>
+<style>
+:root{--bg:#f3f6f9;--card:#fff;--tx:#12263a;--mu:#5d6f80;--bd:#d5dde5;--pr:#0b6fb8;--ok:#1d8a4e;--ko:#c0392b;--wa:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a26;--card:#17283a;--tx:#e8eff6;--mu:#93a6b8;--bd:#2c4258;--pr:#4aa3e8}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:inherit}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:var(--pr);color:#fff;padding:12px 16px;font-weight:700;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+header small{font-weight:400;opacity:.9}
+nav{display:flex;gap:6px;padding:10px 12px 0}
+nav button{flex:1;padding:14px 8px;font-size:16px;font-weight:600;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px}
+nav button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+main{padding:12px;max-width:1000px;margin:auto}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{margin:0 0 10px;font-size:18px}h3{margin:14px 0 8px;font-size:16px}
+label{display:block;font-size:14px;color:var(--mu);margin:8px 0 4px}
+input,select,textarea{width:100%;padding:13px;font-size:16px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+button.b{padding:14px 18px;font-size:16px;font-weight:600;border:0;border-radius:10px;background:var(--pr);color:#fff;margin-top:12px;min-height:48px}
+button.b.ok{background:var(--ok)}button.b.ko{background:var(--ko)}button.b.sm{margin:0;padding:10px 14px;min-height:44px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:13px;font-weight:600;color:#fff}
+.mu{color:var(--mu);font-size:14px}.hide{display:none}
+.item{border:1px solid var(--bd);border-radius:10px;padding:12px;background:var(--bg)}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.big{font-size:32px;font-weight:800}
+#msg{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#12263a;color:#fff;padding:12px;border-radius:10px;display:none;z-index:9}
+</style></head><body>
+<header><span>⛵ Club de voile</span><span><small id="who"></small> <button id="lg" onclick="lgClick()" style="margin-left:8px;padding:8px 12px;font-size:14px;border-radius:8px;border:1px solid #fff;background:transparent;color:#fff">Admin</button></span></header>
+<nav><button id="t1" class="on" onclick="tab(1)">Navigation libre</button><button id="t2" onclick="tab(2)">Matériel</button><button id="t3" class="admin hide" onclick="tab(3)">Administration</button></nav>
+<div id="login" class="card hide" style="margin:10px 12px 0"><h2>Connexion administrateur</h2>
+<label>E-mail</label><input id="lg_e" type="email" autocomplete="username"><label>Mot de passe</label><input id="lg_p" type="password" autocomplete="current-password">
+<button class="b" onclick="login()">Se connecter</button></div>
+<main>
+<div id="p1">
+  <div class="card"><div class="row"><h2>Sur l’eau maintenant</h2><span class="big" id="cnt">0</span></div><div id="onwater" class="grid"></div></div>
+  <div class="card"><h2>Nouveau départ</h2>
+    <label>Pratiquant autorisé</label><select id="d_p"></select>
+    <label>Type de bateau</label><select id="d_t" onchange="fillNum('d_t','d_n')"></select>
+    <label>Numéro</label><select id="d_n"></select>
+    <label>Remarque (zone, heure de retour prévue…)</label><input id="d_c" placeholder="Facultatif">
+    <button class="b" onclick="depart()">Valider le départ</button></div>
+</div>
+<div id="p3" class="hide">
+  <div class="card admin hide"><h2>Pratiquants autorisés en navigation libre</h2>
+    <p class="mu">Import CSV : une ligne par personne, colonnes <b>nom;prenom</b> (séparateur ; ou ,). Les doublons sont ignorés.</p>
+    <input type="file" id="csv" accept=".csv,text/csv,text/plain"><button class="b" onclick="importCsv()">Importer le CSV</button>
+    <h3>Liste (<span id="np">0</span>)</h3><div id="plist" class="mu"></div></div>
+</div>
+<div id="p2" class="hide">
+  <div class="card"><h2>Déclarer un problème</h2>
+    <label>Type de bateau</label><select id="p_t" onchange="fillNum('p_t','p_n')"></select>
+    <label>Numéro</label><select id="p_n"></select>
+    <label>Description du problème</label><textarea id="p_c" rows="3"></textarea>
+    <button class="b ko" onclick="declare()">Signaler</button></div>
+  <div class="card admin hide"><h2>Problèmes en cours</h2><div id="open" class="grid"></div></div>
+  <div class="card admin hide"><h2>Tous les problèmes</h2>
+    <div class="filters"><select id="f_t" onchange="fillNum('f_t','f_n',1);rp()"></select><select id="f_n" onchange="rp()"></select>
+    <select id="f_s" onchange="rp()"><option value="">Tous statuts</option><option>ouvert</option><option>en cours</option><option>résolu</option></select></div>
+    <div id="all" class="grid" style="margin-top:10px"></div></div>
+  <div class="card admin hide"><h2>Parc de bateaux (admin)</h2>
+    <div class="filters"><input id="m_t" placeholder="Type (Laser, Optimist…)"><input id="m_n" placeholder="Numéro"></div>
+    <button class="b" onclick="addBoat()">Ajouter au parc</button>
+    <h3>Matériel (<span id="nb">0</span>)</h3><div id="blist" class="mu"></div></div>
+</div>
+</main><div id="msg"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const S={pr:[],boats:[],deps:[],probs:[]};let DB=null,admin=false;
+const slug=s=>String(s).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const fmt=t=>t?new Date(t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+function toast(m){const e=$("msg");e.textContent=m;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",3000)}
+function tab(n){if(n==3&&!admin)return;[1,2,3].forEach(i=>{$("p"+i).classList.toggle("hide",n!=i);$("t"+i).classList.toggle("on",n==i)})}
+async function w(fn,ok){try{if(!DB)throw 0;await fn();await load();if(ok)toast(ok)}catch(e){toast("Action impossible : "+((e&&e.message)||"base non disponible ou droits insuffisants"))}}
+const types=()=>[...new Set(S.boats.map(b=>b.type))].sort();
+const nums=t=>S.boats.filter(b=>b.type===t).map(b=>b.numero).sort((a,b)=>String(a).localeCompare(String(b),"fr",{numeric:true}));
+function opts(a,first){return (first?`<option value="">${first}</option>`:"")+a.map(x=>`<option>${esc(x)}</option>`).join("")}
+function fillNum(t,n,all){const tv=$(t).value;$(n).innerHTML=opts(tv?nums(tv):[],all?"Tous numéros":"")}
+function keep(id,html){const e=$(id),v=e.value;e.innerHTML=html;if([...e.options].some(o=>o.value===v))e.value=v}
+function render(){
+  document.querySelectorAll(".admin").forEach(e=>e.classList.toggle("hide",!admin));
+  $("who").textContent=admin?"Administrateur":"Utilisateur";
+  const sorted=[...S.pr].sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom,"fr"));
+  const wet=S.deps.filter(d=>d.statut==="en_mer").sort((a,b)=>a.depart-b.depart);
+  const busyP=new Set(wet.map(d=>d.pid)),busyB=new Set(wet.map(d=>d.bid));
+  keep("d_p",'<option value="">— Choisir —</option>'+sorted.filter(p=>!busyP.has(p.id)).map(p=>`<option value="${esc(p.id)}">${esc(p.nom.toUpperCase())} ${esc(p.prenom)}</option>`).join(""));
+  const tv=types();
+  keep("d_t",opts(tv));fillNumKeep("d_t","d_n",busyB);
+  keep("p_t",opts(tv));fillNumKeep("p_t","p_n");
+  keep("f_t",opts(tv,"Tous types"));fillNumKeep("f_t","f_n",null,1);
+  $("cnt").textContent=wet.length;
+  $("onwater").innerHTML=wet.length?wet.map(d=>`<div class="item"><b>${esc(d.nom)}</b><div>⛵ ${esc(d.type)} n°${esc(d.numero)}</div><div class="mu">Parti à ${fmt(d.depart)}${d.note?" · "+esc(d.note):""}</div><button class="b ok sm" style="margin-top:8px;width:100%" onclick="retour('${esc(d.id)}')">Retour au club</button></div>`).join(""):'<span class="mu">Personne sur l’eau.</span>';
+  $("np").textContent=S.pr.length;$("plist").textContent=sorted.map(p=>p.nom.toUpperCase()+" "+p.prenom).join(" · ");
+  $("nb").textContent=S.boats.length;
+  $("blist").innerHTML=[...S.boats].sort((a,b)=>a.id.localeCompare(b.id,"fr",{numeric:true})).map(b=>`<span class="tag" style="background:var(--pr);margin:2px">${esc(b.type)} ${esc(b.numero)}</span>`).join("");
+  rp();
+}
+function fillNumKeep(t,n,busy,all){const e=$(n),v=e.value,tv=$(t).value;let a=tv?nums(tv):[];e.innerHTML=opts(busy?a.filter(x=>!busy.has(slug(tv+"-"+x))):a,all?"Tous numéros":"");if([...e.options].some(o=>o.value===v||o.text===v))e.value=v}
+const col={ouvert:"var(--ko)","en cours":"var(--wa)","résolu":"var(--ok)"};
+function card(p,act){return `<div class="item"><div class="row"><b>${esc(p.type)} n°${esc(p.numero)}</b><span class="tag" style="background:${col[p.statut]}">${esc(p.statut)}</span></div><div>${esc(p.commentaire)}</div><div class="mu">Signalé le ${fmt(p.date)}</div>${p.resolution?`<div class="mu">✔ ${esc(p.resolution)} (${fmt(p.dateres)})</div>`:""}${act?`<label>Statut</label><select id="s_${esc(p.id)}"><option ${p.statut=="ouvert"?"selected":""}>ouvert</option><option ${p.statut=="en cours"?"selected":""}>en cours</option><option>résolu</option></select><label>Commentaire de résolution</label><input id="r_${esc(p.id)}" value="${esc(p.resolution||"")}"><button class="b sm" style="margin-top:8px" onclick="resolve('${esc(p.id)}')">Enregistrer</button>`:""}</div>`}
+function rp(){
+  if(!admin){return}
+  const op=S.probs.filter(p=>p.statut!=="résolu").sort((a,b)=>b.date-a.date);
+  $("open").innerHTML=op.length?op.map(p=>card(p,1)).join(""):'<span class="mu">Aucun problème en cours.</span>';
+  const ft=$("f_t").value,fn=$("f_n").value,fs=$("f_s").value;
+  const al=S.probs.filter(p=>(!ft||p.type===ft)&&(!fn||String(p.numero)===fn)&&(!fs||p.statut===fs)).sort((a,b)=>b.date-a.date);
+  $("all").innerHTML=al.length?al.map(p=>card(p,0)).join(""):'<span class="mu">Aucun résultat.</span>';
+}
+function depart(){
+  const p=S.pr.find(x=>x.id===$("d_p").value),t=$("d_t").value,n=$("d_n").value;
+  if(!p||!t||!n)return toast("Choisissez un pratiquant, un type et un numéro.");
+  w(async()=>{const {error}=await DB.from("departs").insert({pid:p.id,nom:p.prenom+" "+p.nom.toUpperCase(),bid:slug(t+"-"+n),type:t,numero:n,note:$("d_c").value.trim(),depart:Date.now(),statut:"en_mer"});if(error)throw error;$("d_c").value=""},"Départ enregistré");
+}
+function retour(id){w(async()=>{const {error}=await DB.from("departs").update({statut:"rentre",retour:Date.now()}).eq("id",id);if(error)throw error},"Retour enregistré")}
+function declare(){
+  const t=$("p_t").value,n=$("p_n").value,c=$("p_c").value.trim();
+  if(!t||!n||!c)return toast("Type, numéro et description requis.");
+  w(async()=>{const {error}=await DB.from("problemes").insert({bid:slug(t+"-"+n),type:t,numero:n,commentaire:c,date:Date.now(),statut:"ouvert"});if(error)throw error;$("p_c").value=""},"Problème signalé, merci !");
+}
+function resolve(id){
+  const s=$("s_"+id).value,r=$("r_"+id).value.trim(),u={statut:s,resolution:r};
+  if(s==="résolu")u.dateres=Date.now();
+  w(async()=>{const {error}=await DB.from("problemes").update(u).eq("id",id);if(error)throw error},"Statut mis à jour");
+}
+function addBoat(){
+  const t=$("m_t").value.trim(),n=$("m_n").value.trim();if(!t||!n)return toast("Type et numéro requis.");
+  const id=slug(t+"-"+n);if(S.boats.some(b=>b.id===id))return toast("Ce bateau existe déjà.");
+  w(async()=>{const {error}=await DB.from("materiel").insert({id,type:t,numero:n});if(error)throw error;$("m_n").value=""},"Bateau ajouté");
+}
+function importCsv(){
+  const f=$("csv").files[0];if(!f)return toast("Choisissez un fichier CSV.");
+  const r=new FileReader();r.onload=()=>w(async()=>{
+    const lines=String(r.result).replace(/^\uFEFF/,"").split(/\r?\n/).filter(l=>l.trim());
+    let add=0;const rows=[];
+    for(const l of lines){
+      const c=l.split(l.includes(";")?";":",").map(x=>x.trim().replace(/^"|"$/g,""));
+      if(c.length<2||!c[0]||!c[1]||/^nom$/i.test(c[0]))continue;
+      const id=slug(c[0]+"-"+c[1]);if(S.pr.some(p=>p.id===id)||rows.some(x=>x.id===id))continue;
+      rows.push({id,nom:c[0],prenom:c[1]});add++;
+    }
+    if(rows.length){const {error}=await DB.from("pratiquants").upsert(rows);if(error)throw error}
+    toast(add+" pratiquant(s) importé(s)");$("csv").value="";
+  });r.readAsText(f,"utf-8");
+}
+const TABLES={pr:"pratiquants",boats:"materiel",deps:"departs",probs:"problemes"};
+async function load(){
+  if(!DB)return;
+  for(const k in TABLES){
+    if(k==="probs"&&!admin){S.probs=[];continue}
+    let q=DB.from(TABLES[k]).select("*");if(k==="deps")q=q.eq("statut","en_mer");
+    const {data,error}=await q;if(!error)S[k]=data;
+  }
+  const a=document.activeElement;if(a&&a.closest&&a.closest("#open,#all,#csv"))return;
+  render();
+}
+async function setAdmin(session){admin=!!session;$("lg").textContent=admin?"Déconnexion":"Admin";if(!admin&&!$("p3").classList.contains("hide"))tab(1);await load()}
+function lgClick(){if(admin)DB&&DB.auth.signOut();else $("login").classList.toggle("hide")}
+async function login(){
+  if(!DB)return toast("Base non configurée.");
+  const {error}=await DB.auth.signInWithPassword({email:$("lg_e").value.trim(),password:$("lg_p").value});
+  if(error)return toast("Identifiants incorrects.");
+  $("lg_p").value="";$("login").classList.add("hide");
+}
+render();
+(async()=>{
+  if(!window.SUPABASE_URL||/^COLLER/.test(window.SUPABASE_URL)){toast("Renseignez config.js (voir LISEZMOI.md).");return}
+  DB=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+  DB.auth.onAuthStateChange((_e,sess)=>{setAdmin(sess)});
+  const {data}=await DB.auth.getSession();await setAdmin(data.session);
+  setInterval(load,10000);
+})();
+</script></body></html>
