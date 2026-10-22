@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Club de voile – Navigation libre &amp; maintenance</title>
+<title>Club Nautique Mazerolles – Navigation libre &amp; maintenance</title><link rel="icon" href="logo.png"><link rel="apple-touch-icon" href="logo.png">
 <style>
-:root{--bg:#f3f6f9;--card:#fff;--tx:#12263a;--mu:#5d6f80;--bd:#d5dde5;--pr:#0b6fb8;--ok:#1d8a4e;--ko:#c0392b;--wa:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#f3f6f9;--card:#fff;--tx:#12263a;--mu:#5d6f80;--bd:#d5dde5;--pr:#13306b;--ok:#1d8a4e;--ko:#c0392b;--wa:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a26;--card:#17283a;--tx:#e8eff6;--mu:#93a6b8;--bd:#2c4258;--pr:#4aa3e8}}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:inherit}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{background:var(--pr);color:#fff;padding:12px 16px;font-weight:700;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+header{background:var(--pr);color:#fff;padding:12px 16px;font-weight:700;font-size:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}.brand{display:flex;align-items:center;gap:10px}.brand img{height:46px;width:46px;border-radius:50%;background:#fff}
 header small{font-weight:400;opacity:.9}
 nav{display:flex;gap:6px;padding:10px 12px 0}
 nav button{flex:1;padding:14px 8px;font-size:16px;font-weight:600;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px}
@@ -22,15 +22,21 @@ button.b.ok{background:var(--ok)}button.b.ko{background:var(--ko)}button.b.sm{ma
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
 .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:13px;font-weight:600;color:#fff}
-.mu{color:var(--mu);font-size:14px}.hide{display:none}
+.mu{color:var(--mu);font-size:14px}.hide{display:none!important}
 .item{border:1px solid var(--bd);border-radius:10px;padding:12px;background:var(--bg)}
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .big{font-size:32px;font-weight:800}
+@keyframes bl{0%,100%{background:var(--bg);border-color:var(--bd)}50%{background:#e5392b;border-color:#e5392b;color:#fff}}
+.late{animation:bl 1s infinite}.late .mu{color:inherit}
+.list{display:flex;flex-direction:column;gap:8px}
+details summary{cursor:pointer;font-weight:600;padding:10px 0;color:var(--pr)}
+#dlg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--bd);vertical-align:top}.sc{overflow-x:auto;max-height:420px;overflow-y:auto}
 #msg{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#12263a;color:#fff;padding:12px;border-radius:10px;display:none;z-index:9}
 </style></head><body>
-<header><span>⛵ Club de voile</span><span><small id="who"></small> <button id="lg" onclick="lgClick()" style="margin-left:8px;padding:8px 12px;font-size:14px;border-radius:8px;border:1px solid #fff;background:transparent;color:#fff">Admin</button></span></header>
+<header><span class="brand"><img src="logo.png" alt="Logo CNM"> Club Nautique Mazerolles</span><span><small id="who"></small> <button id="lg" onclick="lgClick()" style="margin-left:8px;padding:8px 12px;font-size:14px;border-radius:8px;border:1px solid #fff;background:transparent;color:#fff">Admin</button></span></header>
 <nav><button id="t1" class="on" onclick="tab(1)">Navigation libre</button><button id="t2" onclick="tab(2)">Matériel</button><button id="t3" class="admin hide" onclick="tab(3)">Administration</button></nav>
-<div id="login" class="card hide" style="margin:10px 12px 0"><h2>Connexion administrateur</h2>
+<div id="login" class="card hide" style="margin:10px 12px 0"><img src="logo.png" alt="" style="height:64px;display:block;margin:0 auto 8px"><h2>Connexion administrateur</h2>
 <label>E-mail</label><input id="lg_e" type="email" autocomplete="username"><label>Mot de passe</label><input id="lg_p" type="password" autocomplete="current-password">
 <button class="b" onclick="login()">Se connecter</button></div>
 <main>
@@ -45,9 +51,13 @@ button.b.ok{background:var(--ok)}button.b.ko{background:var(--ko)}button.b.sm{ma
 </div>
 <div id="p3" class="hide">
   <div class="card admin hide"><h2>Pratiquants autorisés en navigation libre</h2>
+    <h3>Ajouter un pratiquant</h3><div class="filters"><input id="n_n" placeholder="Nom"><input id="n_p" placeholder="Prénom"></div><button class="b" onclick="addPr()">Ajouter</button>
+    <h3>Importer un fichier CSV</h3>
     <p class="mu">Import CSV : une ligne par personne, colonnes <b>nom;prenom</b> (séparateur ; ou ,). Les doublons sont ignorés.</p>
     <input type="file" id="csv" accept=".csv,text/csv,text/plain"><button class="b" onclick="importCsv()">Importer le CSV</button>
     <h3>Liste (<span id="np">0</span>)</h3><div id="plist" class="mu"></div></div>
+<div class="card admin hide"><h2>Archives des navigations</h2><div class="sc"><table><thead><tr><th>Pratiquant</th><th>Bateau</th><th>Départ</th><th>Retour</th><th>Durée</th></tr></thead><tbody id="a_dep"></tbody></table></div><p class="mu">300 dernières sorties.</p></div>
+  <div class="card admin hide"><h2>Archives des réparations clôturées</h2><div class="sc"><table><thead><tr><th>Bateau</th><th>Signalé</th><th>Problème</th><th>Résolution</th><th>Clôturé</th></tr></thead><tbody id="a_rep"></tbody></table></div></div>
 </div>
 <div id="p2" class="hide">
   <div class="card"><h2>Déclarer un problème</h2>
@@ -55,28 +65,33 @@ button.b.ok{background:var(--ok)}button.b.ko{background:var(--ko)}button.b.sm{ma
     <label>Numéro</label><select id="p_n"></select>
     <label>Description du problème</label><textarea id="p_c" rows="3"></textarea>
     <button class="b ko" onclick="declare()">Signaler</button></div>
-  <div class="card admin hide"><h2>Problèmes en cours</h2><div id="open" class="grid"></div></div>
+  <div class="card admin hide"><h2>Problèmes en cours</h2><div id="open" class="list"></div></div>
   <div class="card admin hide"><h2>Tous les problèmes</h2>
     <div class="filters"><select id="f_t" onchange="fillNum('f_t','f_n',1);rp()"></select><select id="f_n" onchange="rp()"></select>
     <select id="f_s" onchange="rp()"><option value="">Tous statuts</option><option>ouvert</option><option>en cours</option><option>résolu</option></select></div>
-    <div id="all" class="grid" style="margin-top:10px"></div></div>
+    <div id="all" class="list" style="margin-top:10px"></div></div>
   <div class="card admin hide"><h2>Parc de bateaux (admin)</h2>
     <div class="filters"><input id="m_t" placeholder="Type (Laser, Optimist…)"><input id="m_n" placeholder="Numéro"></div>
     <button class="b" onclick="addBoat()">Ajouter au parc</button>
     <h3>Matériel (<span id="nb">0</span>)</h3><div id="blist" class="mu"></div></div>
 </div>
-</main><div id="msg"></div>
+</main>
+<div id="dlg" class="hide"><div class="card" style="max-width:420px;width:100%;margin:0"><h2>Retour enregistré ✔</h2><p id="dlg_b" class="mu"></p>
+<label>Une réparation à prévoir sur ce bateau ? Décrivez-la :</label><textarea id="dlg_c" rows="3"></textarea>
+<button class="b ko" onclick="dlgSend()">Signaler la réparation</button> <button class="b" style="background:var(--mu)" onclick="dlgClose()">Rien à signaler</button></div></div>
+<div id="msg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const S={pr:[],boats:[],deps:[],probs:[]};let DB=null,admin=false;
+const S={pr:[],boats:[],deps:[],probs:[],hist:[]};let DB=null,admin=false;
+const dur=ms=>{const m=Math.max(0,Math.round(ms/60000));return Math.floor(m/60)+" h "+String(m%60).padStart(2,"0")};
 const slug=s=>String(s).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const fmt=t=>t?new Date(t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
 function toast(m){const e=$("msg");e.textContent=m;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",3000)}
 function tab(n){if(n==3&&!admin)return;[1,2,3].forEach(i=>{$("p"+i).classList.toggle("hide",n!=i);$("t"+i).classList.toggle("on",n==i)})}
-async function w(fn,ok){try{if(!DB)throw 0;await fn();await load();if(ok)toast(ok)}catch(e){toast("Action impossible : "+((e&&e.message)||"base non disponible ou droits insuffisants"))}}
+async function w(fn,ok){try{if(!DB)throw 0;await fn();await load();if(ok)toast(ok);return true}catch(e){toast("Action impossible : "+((e&&e.message)||"base non disponible ou droits insuffisants"));return false}}
 const types=()=>[...new Set(S.boats.map(b=>b.type))].sort();
 const nums=t=>S.boats.filter(b=>b.type===t).map(b=>b.numero).sort((a,b)=>String(a).localeCompare(String(b),"fr",{numeric:true}));
 function opts(a,first){return (first?`<option value="">${first}</option>`:"")+a.map(x=>`<option>${esc(x)}</option>`).join("")}
@@ -94,15 +109,17 @@ function render(){
   keep("p_t",opts(tv));fillNumKeep("p_t","p_n");
   keep("f_t",opts(tv,"Tous types"));fillNumKeep("f_t","f_n",null,1);
   $("cnt").textContent=wet.length;
-  $("onwater").innerHTML=wet.length?wet.map(d=>`<div class="item"><b>${esc(d.nom)}</b><div>⛵ ${esc(d.type)} n°${esc(d.numero)}</div><div class="mu">Parti à ${fmt(d.depart)}${d.note?" · "+esc(d.note):""}</div><button class="b ok sm" style="margin-top:8px;width:100%" onclick="retour('${esc(d.id)}')">Retour au club</button></div>`).join(""):'<span class="mu">Personne sur l’eau.</span>';
-  $("np").textContent=S.pr.length;$("plist").textContent=sorted.map(p=>p.nom.toUpperCase()+" "+p.prenom).join(" · ");
+  $("onwater").innerHTML=wet.length?wet.map(d=>`<div class="item${Date.now()-d.depart>10800000?" late":""}" data-t="${d.depart}"><b>${esc(d.nom)}</b><div>⛵ ${esc(d.type)} n°${esc(d.numero)}</div><div class="mu">Parti ${fmt(d.depart)} (${dur(Date.now()-d.depart)})${d.note?" · "+esc(d.note):""}</div><button class="b ok sm" style="margin-top:8px;width:100%" onclick="retour('${esc(d.id)}')">Retour au club</button></div>`).join(""):'<span class="mu">Personne sur l’eau.</span>';
+  $("np").textContent=S.pr.length;$("plist").innerHTML=sorted.map(p=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--bd)"><span>${esc(p.nom.toUpperCase())} ${esc(p.prenom)}</span><button class="b ko sm" onclick="delPr('${esc(p.id)}')">Supprimer</button></div>`).join("");
   $("nb").textContent=S.boats.length;
+  $("a_dep").innerHTML=[...S.hist].sort((a,b)=>b.depart-a.depart).map(d=>`<tr><td>${esc(d.nom)}</td><td>${esc(d.type)} ${esc(d.numero)}</td><td>${fmt(d.depart)}</td><td>${d.retour?fmt(d.retour):"<b>sur l’eau</b>"}</td><td>${d.retour?dur(d.retour-d.depart):""}</td></tr>`).join("");
+  $("a_rep").innerHTML=S.probs.filter(p=>p.statut==="résolu").sort((a,b)=>(b.dateres||0)-(a.dateres||0)).map(p=>`<tr><td>${esc(p.type)} ${esc(p.numero)}</td><td>${fmt(p.date)}</td><td>${esc(p.commentaire)}</td><td>${esc(p.resolution)}</td><td>${fmt(p.dateres)}</td></tr>`).join("");
   $("blist").innerHTML=[...S.boats].sort((a,b)=>a.id.localeCompare(b.id,"fr",{numeric:true})).map(b=>`<span class="tag" style="background:var(--pr);margin:2px">${esc(b.type)} ${esc(b.numero)}</span>`).join("");
   rp();
 }
 function fillNumKeep(t,n,busy,all){const e=$(n),v=e.value,tv=$(t).value;let a=tv?nums(tv):[];e.innerHTML=opts(busy?a.filter(x=>!busy.has(slug(tv+"-"+x))):a,all?"Tous numéros":"");if([...e.options].some(o=>o.value===v||o.text===v))e.value=v}
 const col={ouvert:"var(--ko)","en cours":"var(--wa)","résolu":"var(--ok)"};
-function card(p,act){return `<div class="item"><div class="row"><b>${esc(p.type)} n°${esc(p.numero)}</b><span class="tag" style="background:${col[p.statut]}">${esc(p.statut)}</span></div><div>${esc(p.commentaire)}</div><div class="mu">Signalé le ${fmt(p.date)}</div>${p.resolution?`<div class="mu">✔ ${esc(p.resolution)} (${fmt(p.dateres)})</div>`:""}${act?`<label>Statut</label><select id="s_${esc(p.id)}"><option ${p.statut=="ouvert"?"selected":""}>ouvert</option><option ${p.statut=="en cours"?"selected":""}>en cours</option><option>résolu</option></select><label>Commentaire de résolution</label><input id="r_${esc(p.id)}" value="${esc(p.resolution||"")}"><button class="b sm" style="margin-top:8px" onclick="resolve('${esc(p.id)}')">Enregistrer</button>`:""}</div>`}
+function card(p,act){return `<div class="item"><div class="row"><b>${esc(p.type)} n°${esc(p.numero)}</b><span class="tag" style="background:${col[p.statut]}">${esc(p.statut)}</span></div><div>${esc(p.commentaire)}</div><div class="mu">Signalé le ${fmt(p.date)}</div>${p.resolution?`<div class="mu">✔ ${esc(p.resolution)} (${fmt(p.dateres)})</div>`:""}${act?`<details><summary>Traiter / résoudre</summary><label>Statut</label><select id="s_${esc(p.id)}"><option ${p.statut=="ouvert"?"selected":""}>ouvert</option><option ${p.statut=="en cours"?"selected":""}>en cours</option><option>résolu</option></select><label>Commentaire de résolution</label><input id="r_${esc(p.id)}" value="${esc(p.resolution||"")}"><button class="b sm" style="margin-top:8px" onclick="resolve('${esc(p.id)}')">Enregistrer</button></details>`:""}</div>`}
 function rp(){
   if(!admin){return}
   const op=S.probs.filter(p=>p.statut!=="résolu").sort((a,b)=>b.date-a.date);
@@ -116,11 +133,22 @@ function depart(){
   if(!p||!t||!n)return toast("Choisissez un pratiquant, un type et un numéro.");
   w(async()=>{const {error}=await DB.from("departs").insert({pid:p.id,nom:p.prenom+" "+p.nom.toUpperCase(),bid:slug(t+"-"+n),type:t,numero:n,note:$("d_c").value.trim(),depart:Date.now(),statut:"en_mer"});if(error)throw error;$("d_c").value=""},"Départ enregistré");
 }
-function retour(id){w(async()=>{const {error}=await DB.from("departs").update({statut:"rentre",retour:Date.now()}).eq("id",id);if(error)throw error},"Retour enregistré")}
+function retour(id){const d=S.deps.find(x=>x.id===id);
+  w(async()=>{const {error}=await DB.from("departs").update({statut:"rentre",retour:Date.now()}).eq("id",id);if(error)throw error},"Retour enregistré").then(ok=>{if(ok&&d){dlgB=d;$("dlg_b").textContent=d.nom+" · "+d.type+" n°"+d.numero;$("dlg_c").value="";$("dlg").classList.remove("hide")}})}
+let dlgB=null;
+function dlgClose(){$("dlg").classList.add("hide");dlgB=null}
+function dlgSend(){const c=$("dlg_c").value.trim();if(!c)return toast("Décrivez la réparation ou choisissez « Rien à signaler ».");sendProb(dlgB.type,dlgB.numero,c);dlgClose()}
+function sendProb(t,n,c){const id=crypto.randomUUID();
+  return w(async()=>{const {error}=await DB.from("problemes").insert({id,bid:slug(t+"-"+n),type:t,numero:n,commentaire:c,date:Date.now(),statut:"ouvert"});if(error)throw error;
+    fetch("/.netlify/functions/agenda",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})}).catch(()=>{})},"Réparation signalée, merci !")}
+function addPr(){const nom=$("n_n").value.trim(),pre=$("n_p").value.trim();if(!nom||!pre)return toast("Nom et prénom requis.");
+  const id=slug(nom+"-"+pre);if(S.pr.some(p=>p.id===id))return toast("Ce pratiquant existe déjà.");
+  w(async()=>{const {error}=await DB.from("pratiquants").insert({id,nom,prenom:pre});if(error)throw error;$("n_n").value="";$("n_p").value=""},"Pratiquant ajouté")}
+function delPr(id){if(!confirm("Supprimer ce pratiquant ?"))return;w(async()=>{const {error}=await DB.from("pratiquants").delete().eq("id",id);if(error)throw error},"Pratiquant supprimé")}
 function declare(){
   const t=$("p_t").value,n=$("p_n").value,c=$("p_c").value.trim();
   if(!t||!n||!c)return toast("Type, numéro et description requis.");
-  w(async()=>{const {error}=await DB.from("problemes").insert({bid:slug(t+"-"+n),type:t,numero:n,commentaire:c,date:Date.now(),statut:"ouvert"});if(error)throw error;$("p_c").value=""},"Problème signalé, merci !");
+  sendProb(t,n,c);$("p_c").value="";
 }
 function resolve(id){
   const s=$("s_"+id).value,r=$("r_"+id).value.trim(),u={statut:s,resolution:r};
@@ -155,6 +183,7 @@ async function load(){
     let q=DB.from(TABLES[k]).select("*");if(k==="deps")q=q.eq("statut","en_mer");
     const {data,error}=await q;if(!error)S[k]=data;
   }
+  if(admin){const {data}=await DB.from("departs").select("*").order("depart",{ascending:false}).limit(300);if(data)S.hist=data}else S.hist=[];
   const a=document.activeElement;if(a&&a.closest&&a.closest("#open,#all,#csv"))return;
   render();
 }
@@ -163,15 +192,15 @@ function lgClick(){if(admin)DB&&DB.auth.signOut();else $("login").classList.togg
 async function login(){
   if(!DB)return toast("Base non configurée.");
   const {error}=await DB.auth.signInWithPassword({email:$("lg_e").value.trim(),password:$("lg_p").value});
-  if(error)return toast("Identifiants incorrects.");
+  if(error)return toast("Connexion refusée : "+error.message);
   $("lg_p").value="";$("login").classList.add("hide");
 }
 render();
 (async()=>{
   if(!window.SUPABASE_URL||/^COLLER/.test(window.SUPABASE_URL)){toast("Renseignez config.js (voir LISEZMOI.md).");return}
-  DB=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+  DB=supabase.createClient(new URL(window.SUPABASE_URL.trim()).origin,window.SUPABASE_ANON_KEY.trim());
   DB.auth.onAuthStateChange((_e,sess)=>{setAdmin(sess)});
   const {data}=await DB.auth.getSession();await setAdmin(data.session);
-  setInterval(load,10000);
+  setInterval(load,10000);setInterval(()=>document.querySelectorAll("[data-t]").forEach(e=>e.classList.toggle("late",Date.now()-e.dataset.t>10800000)),20000);
 })();
 </script></body></html>

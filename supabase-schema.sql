@@ -30,3 +30,4 @@ create policy "retour departs" on departs for update to anon, authenticated usin
 create policy "signalement" on problemes for insert to anon, authenticated with check (true);
 create policy "admin lecture problemes" on problemes for select to authenticated using (true);
 create policy "admin maj problemes" on problemes for update to authenticated using (true) with check (true);
+alter table problemes add column if not exists agenda_id text;
