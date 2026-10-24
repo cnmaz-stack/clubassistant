@@ -53,7 +53,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
   <div class="card admin hide"><h2>Pratiquants autorisés en navigation libre</h2>
     <h3>Ajouter un pratiquant</h3><div class="filters"><input id="n_n" placeholder="Nom"><input id="n_p" placeholder="Prénom"></div><label>Date de naissance</label><input id="n_d" type="date"><label>Supports autorisés en navigation libre</label><div id="n_s"></div><button class="b" onclick="addPr()">Ajouter</button>
     <h3>Importer un fichier CSV</h3>
-    <p class="mu">Fichier d’export AssoConnect (.xlsx ou .csv). Colonnes lues : <b>Nom, Prénom, Date de naissance, ID du Contact, Navigation libre, Catamaran, Dériveur, Optimist, Planche à voile, Windfoil</b>. Seules les lignes avec « Navigation libre » renseigné sont importées ; un pratiquant déjà présent est mis à jour. Un simple fichier <b>nom;prenom</b> reste accepté.</p>
+    <p class="mu">Fichier d’export AssoConnect (.xlsx ou .csv). Colonnes lues : <b>Nom, Prénom, Date de naissance, ID du Contact, Navigation libre</b> (supports séparés par « | ») et <b>Nav libre</b>. Seuls les adhérents ayant au moins un support en navigation libre sont importés ; un pratiquant déjà présent est mis à jour. Un simple fichier <b>nom;prenom</b> reste accepté.</p>
     <input type="file" id="csv" accept=".xlsx,.xls,.csv,text/csv,text/plain"><button class="b" onclick="importCsv()">Importer le fichier</button>
     <h3>Liste (<span id="np">0</span>)</h3><div id="plist" class="mu"></div></div>
 <div class="card admin hide"><h2>Export Excel</h2><p class="mu">Toutes les navigations et toutes les réparations, avec une colonne date, dans un classeur à deux feuilles.</p><button class="b" onclick="exportXlsx()">Télécharger l’export (.xlsx)</button></div>
@@ -163,7 +163,7 @@ function addBoat(){
   const id=slug(t+"-"+n);if(S.boats.some(b=>b.id===id))return toast("Ce bateau existe déjà.");
   w(async()=>{const {error}=await DB.from("materiel").insert({id,type:t,numero:n});if(error)throw error;$("m_n").value=""},"Bateau ajouté");
 }
-const SUPPORTS=["Catamaran","Dériveur","Optimist","Planche à voile","Windfoil"];
+const SUPPORTS=["Catamaran","Dériveur","Optimist","Planche à voile","Windfoil","Habitable / Goélette"];
 $("n_s").innerHTML=SUPPORTS.map(x=>`<label style="display:inline-flex;gap:6px;align-items:center;margin:4px 14px 4px 0;color:var(--tx)"><input type="checkbox" style="width:22px;height:22px" value="${x}">${x}</label>`).join("");
 const fmtD=iso=>iso?String(iso).split("-").reverse().join("/"):"";
 const norm=x=>String(x??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
@@ -189,22 +189,24 @@ function toIso(v){
   if(m=s.match(/^(\d{4})-(\d{2})-(\d{2})/))return m[1]+"-"+m[2]+"-"+m[3];
   if(m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/)){let y=+m[3];if(y<100)y+=y>30?1900:2000;return y+"-"+p(m[2])+"-"+p(m[1])}
   return null}
+function fixRef(ws){let R=0,C=0;for(const k in ws){if(k[0]==="!")continue;const a=XLSX.utils.decode_cell(k);if(a.r>R)R=a.r;if(a.c>C)C=a.c}ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:R,c:C}})}
 async function importCsv(){
   const f=$("csv").files[0];if(!f)return toast("Choisissez un fichier.");
   let g;
   try{
-    if(/\.xlsx?$/i.test(f.name)){const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});g=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:""})}
+    if(/\.xlsx?$/i.test(f.name)){const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];fixRef(ws);g=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""})}
     else{const b=await f.arrayBuffer();let t=new TextDecoder("utf-8").decode(b);if(t.includes("\uFFFD"))t=new TextDecoder("windows-1252").decode(b);g=parseCsv(t.replace(/^\uFEFF/,""))}
   }catch(e){return toast("Fichier illisible.")}
   const H=(g[0]||[]).map(norm),ix=n=>H.indexOf(norm(n));
   const hasH=ix("Nom")>=0;
-  const I={nom:hasH?ix("Nom"):0,pre:hasH?ix("Prénom"):1,nai:ix("Date de naissance"),id:ix("ID du Contact"),nl:ix("Navigation libre")};
+  const I={nom:hasH?ix("Nom"):0,pre:hasH?ix("Prénom"):1,nai:ix("Date de naissance"),id:ix("ID du Contact"),nl:ix("Navigation libre"),nl2:ix("Nav libre")};
   const rows=new Map();let skip=0;
   for(const r of g.slice(hasH?1:0)){
     const nom=String(r[I.nom]??"").trim(),pre=String(r[I.pre]??"").trim();if(!nom||!pre)continue;
-    if(I.nl>=0&&!yes(r[I.nl])){skip++;continue}
+    const nv=[...new Set([I.nl,I.nl2].filter(k=>k>=0).flatMap(k=>String(r[k]??"").split(/[|;,]/).map(x=>x.trim()).filter(Boolean)))];
+    if((I.nl>=0||I.nl2>=0)&&!nv.length){skip++;continue}
     const id=slug(nom+"-"+pre);
-    rows.set(id,{id,nom,prenom:pre,naissance:I.nai>=0?toIso(r[I.nai]):null,navigation:SUPPORTS.filter(x=>ix(x)>=0&&yes(r[ix(x)])),contact_id:I.id>=0?String(r[I.id]):null});
+    rows.set(id,{id,nom,prenom:pre,naissance:I.nai>=0?toIso(r[I.nai]):null,navigation:nv,contact_id:I.id>=0?String(r[I.id]):null});
   }
   const list=[...rows.values()];
   if(!list.length)return toast("Aucun pratiquant à importer"+(skip?" ("+skip+" sans « Navigation libre »)":"")+".");
