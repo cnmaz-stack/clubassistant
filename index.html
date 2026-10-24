@@ -53,7 +53,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
   <div class="card admin hide"><h2>Pratiquants autorisés en navigation libre</h2>
     <h3>Ajouter un pratiquant</h3><div class="filters"><input id="n_n" placeholder="Nom"><input id="n_p" placeholder="Prénom"></div><label>Date de naissance</label><input id="n_d" type="date"><label>Supports autorisés en navigation libre</label><div id="n_s"></div><button class="b" onclick="addPr()">Ajouter</button>
     <h3>Importer un fichier CSV</h3>
-    <p class="mu">Fichier d’export AssoConnect (.xlsx ou .csv). Colonnes lues : <b>Nom, Prénom, Date de naissance, ID du Contact, Navigation libre</b> (supports séparés par « | ») et <b>Nav libre</b>. Seuls les adhérents ayant au moins un support en navigation libre sont importés ; un pratiquant déjà présent est mis à jour. Un simple fichier <b>nom;prenom</b> reste accepté.</p>
+    <p class="mu">Fichier d’export AssoConnect (.xlsx ou .csv). Colonnes lues : <b>Nom, Prénom, Date de naissance, ID du Contact, Navigation libre</b> (supports séparés par « | ») et <b>Nav libre</b>. Par défaut, seuls les adhérents ayant au moins un support en navigation libre sont importés (case ci-dessous, décochable) ; un pratiquant déjà présent est mis à jour. Un simple fichier <b>nom;prenom</b> reste accepté.</p>
+    <label style="display:flex;gap:10px;align-items:center;color:var(--tx)"><input type="checkbox" id="only" checked style="width:22px;height:22px"> Limiter l’import aux adhérents dont « Navigation libre » est rempli</label>
     <input type="file" id="csv" accept=".xlsx,.xls,.csv,text/csv,text/plain"><button class="b" onclick="importCsv()">Importer le fichier</button>
     <h3>Liste (<span id="np">0</span>)</h3><div id="plist" class="mu"></div></div>
 <div class="card admin hide"><h2>Export Excel</h2><p class="mu">Toutes les navigations et toutes les réparations, avec une colonne date, dans un classeur à deux feuilles.</p><button class="b" onclick="exportXlsx()">Télécharger l’export (.xlsx)</button></div>
@@ -204,7 +205,7 @@ async function importCsv(){
   for(const r of g.slice(hasH?1:0)){
     const nom=String(r[I.nom]??"").trim(),pre=String(r[I.pre]??"").trim();if(!nom||!pre)continue;
     const nv=[...new Set([I.nl,I.nl2].filter(k=>k>=0).flatMap(k=>String(r[k]??"").split(/[|;,]/).map(x=>x.trim()).filter(Boolean)))];
-    if((I.nl>=0||I.nl2>=0)&&!nv.length){skip++;continue}
+    if($("only").checked&&(I.nl>=0||I.nl2>=0)&&!nv.length){skip++;continue}
     const id=slug(nom+"-"+pre);
     rows.set(id,{id,nom,prenom:pre,naissance:I.nai>=0?toIso(r[I.nai]):null,navigation:nv,contact_id:I.id>=0?String(r[I.id]):null});
   }
