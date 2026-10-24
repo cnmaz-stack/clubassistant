@@ -43,7 +43,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <div id="p1">
   <div class="card"><div class="row"><h2>Sur l’eau maintenant</h2><span class="big" id="cnt">0</span></div><div id="onwater" class="grid"></div></div>
   <div class="card"><h2>Nouveau départ</h2>
-    <label>Pratiquant autorisé</label><select id="d_p"></select>
+    <label>Pratiquant autorisé</label><select id="d_p" onchange="hint()"></select><div id="d_hint" class="mu"></div>
     <label>Type de bateau</label><select id="d_t" onchange="fillNum('d_t','d_n')"></select>
     <label>Numéro</label><select id="d_n"></select>
     <label>Remarque (zone, heure de retour prévue…)</label><input id="d_c" placeholder="Facultatif">
@@ -51,12 +51,13 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 </div>
 <div id="p3" class="hide">
   <div class="card admin hide"><h2>Pratiquants autorisés en navigation libre</h2>
-    <h3>Ajouter un pratiquant</h3><div class="filters"><input id="n_n" placeholder="Nom"><input id="n_p" placeholder="Prénom"></div><button class="b" onclick="addPr()">Ajouter</button>
+    <h3>Ajouter un pratiquant</h3><div class="filters"><input id="n_n" placeholder="Nom"><input id="n_p" placeholder="Prénom"></div><label>Date de naissance</label><input id="n_d" type="date"><label>Supports autorisés en navigation libre</label><div id="n_s"></div><button class="b" onclick="addPr()">Ajouter</button>
     <h3>Importer un fichier CSV</h3>
-    <p class="mu">Import CSV : une ligne par personne, colonnes <b>nom;prenom</b> (séparateur ; ou ,). Les doublons sont ignorés.</p>
-    <input type="file" id="csv" accept=".csv,text/csv,text/plain"><button class="b" onclick="importCsv()">Importer le CSV</button>
+    <p class="mu">Fichier d’export AssoConnect (.xlsx ou .csv). Colonnes lues : <b>Nom, Prénom, Date de naissance, ID du Contact, Navigation libre, Catamaran, Dériveur, Optimist, Planche à voile, Windfoil</b>. Seules les lignes avec « Navigation libre » renseigné sont importées ; un pratiquant déjà présent est mis à jour. Un simple fichier <b>nom;prenom</b> reste accepté.</p>
+    <input type="file" id="csv" accept=".xlsx,.xls,.csv,text/csv,text/plain"><button class="b" onclick="importCsv()">Importer le fichier</button>
     <h3>Liste (<span id="np">0</span>)</h3><div id="plist" class="mu"></div></div>
-<div class="card admin hide"><h2>Archives des navigations</h2><div class="sc"><table><thead><tr><th>Pratiquant</th><th>Bateau</th><th>Départ</th><th>Retour</th><th>Durée</th></tr></thead><tbody id="a_dep"></tbody></table></div><p class="mu">300 dernières sorties.</p></div>
+<div class="card admin hide"><h2>Export Excel</h2><p class="mu">Toutes les navigations et toutes les réparations, avec une colonne date, dans un classeur à deux feuilles.</p><button class="b" onclick="exportXlsx()">Télécharger l’export (.xlsx)</button></div>
+  <div class="card admin hide"><h2>Archives des navigations</h2><div class="sc"><table><thead><tr><th>Pratiquant</th><th>Bateau</th><th>Départ</th><th>Retour</th><th>Durée</th></tr></thead><tbody id="a_dep"></tbody></table></div><p class="mu">300 dernières sorties.</p></div>
   <div class="card admin hide"><h2>Archives des réparations clôturées</h2><div class="sc"><table><thead><tr><th>Bateau</th><th>Signalé</th><th>Problème</th><th>Résolution</th><th>Clôturé</th></tr></thead><tbody id="a_rep"></tbody></table></div></div>
 </div>
 <div id="p2" class="hide">
@@ -81,6 +82,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <button class="b ko" onclick="dlgSend()">Signaler la réparation</button> <button class="b" style="background:var(--mu)" onclick="dlgClose()">Rien à signaler</button></div></div>
 <div id="msg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -108,9 +110,9 @@ function render(){
   keep("d_t",opts(tv));fillNumKeep("d_t","d_n",busyB);
   keep("p_t",opts(tv));fillNumKeep("p_t","p_n");
   keep("f_t",opts(tv,"Tous types"));fillNumKeep("f_t","f_n",null,1);
-  $("cnt").textContent=wet.length;
+  hint();$("cnt").textContent=wet.length;
   $("onwater").innerHTML=wet.length?wet.map(d=>`<div class="item${Date.now()-d.depart>10800000?" late":""}" data-t="${d.depart}"><b>${esc(d.nom)}</b><div>⛵ ${esc(d.type)} n°${esc(d.numero)}</div><div class="mu">Parti ${fmt(d.depart)} (${dur(Date.now()-d.depart)})${d.note?" · "+esc(d.note):""}</div><button class="b ok sm" style="margin-top:8px;width:100%" onclick="retour('${esc(d.id)}')">Retour au club</button></div>`).join(""):'<span class="mu">Personne sur l’eau.</span>';
-  $("np").textContent=S.pr.length;$("plist").innerHTML=sorted.map(p=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--bd)"><span>${esc(p.nom.toUpperCase())} ${esc(p.prenom)}</span><button class="b ko sm" onclick="delPr('${esc(p.id)}')">Supprimer</button></div>`).join("");
+  $("np").textContent=S.pr.length;$("plist").innerHTML=sorted.map(p=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--bd)"><span><b>${esc(p.nom.toUpperCase())}</b> ${esc(p.prenom)}<br><small class="mu">${p.naissance?fmtD(p.naissance)+" · ":""}${esc((p.navigation||[]).join(", ")||"aucun support")}</small></span><button class="b ko sm" onclick="delPr('${esc(p.id)}')">Supprimer</button></div>`).join("");
   $("nb").textContent=S.boats.length;
   $("a_dep").innerHTML=[...S.hist].sort((a,b)=>b.depart-a.depart).map(d=>`<tr><td>${esc(d.nom)}</td><td>${esc(d.type)} ${esc(d.numero)}</td><td>${fmt(d.depart)}</td><td>${d.retour?fmt(d.retour):"<b>sur l’eau</b>"}</td><td>${d.retour?dur(d.retour-d.depart):""}</td></tr>`).join("");
   $("a_rep").innerHTML=S.probs.filter(p=>p.statut==="résolu").sort((a,b)=>(b.dateres||0)-(a.dateres||0)).map(p=>`<tr><td>${esc(p.type)} ${esc(p.numero)}</td><td>${fmt(p.date)}</td><td>${esc(p.commentaire)}</td><td>${esc(p.resolution)}</td><td>${fmt(p.dateres)}</td></tr>`).join("");
@@ -119,7 +121,7 @@ function render(){
 }
 function fillNumKeep(t,n,busy,all){const e=$(n),v=e.value,tv=$(t).value;let a=tv?nums(tv):[];e.innerHTML=opts(busy?a.filter(x=>!busy.has(slug(tv+"-"+x))):a,all?"Tous numéros":"");if([...e.options].some(o=>o.value===v||o.text===v))e.value=v}
 const col={ouvert:"var(--ko)","en cours":"var(--wa)","résolu":"var(--ok)"};
-function card(p,act){return `<div class="item"><div class="row"><b>${esc(p.type)} n°${esc(p.numero)}</b><span class="tag" style="background:${col[p.statut]}">${esc(p.statut)}</span></div><div>${esc(p.commentaire)}</div><div class="mu">Signalé le ${fmt(p.date)}</div>${p.resolution?`<div class="mu">✔ ${esc(p.resolution)} (${fmt(p.dateres)})</div>`:""}${act?`<details><summary>Traiter / résoudre</summary><label>Statut</label><select id="s_${esc(p.id)}"><option ${p.statut=="ouvert"?"selected":""}>ouvert</option><option ${p.statut=="en cours"?"selected":""}>en cours</option><option>résolu</option></select><label>Commentaire de résolution</label><input id="r_${esc(p.id)}" value="${esc(p.resolution||"")}"><button class="b sm" style="margin-top:8px" onclick="resolve('${esc(p.id)}')">Enregistrer</button></details>`:""}</div>`}
+function card(p,act){return `<div class="item"><div class="row"><b>${esc(p.type)} n°${esc(p.numero)}</b><span class="tag" style="background:${col[p.statut]}">${esc(p.statut)}</span></div><div>${esc(p.commentaire)}</div><div class="mu">Signalé le ${fmt(p.date)}</div>${p.resolution?`<div class="mu">✔ ${esc(p.resolution)} (${fmt(p.dateres)})</div>`:""}${act?`<details><summary>Traiter / résoudre</summary><label>Statut</label><select id="s_${esc(p.id)}"><option ${p.statut=="ouvert"?"selected":""}>ouvert</option><option ${p.statut=="en cours"?"selected":""}>en cours</option><option>résolu</option></select><label>Commentaire de résolution</label><input id="r_${esc(p.id)}" value="${esc(p.resolution||"")}"><button class="b sm" style="margin-top:8px" onclick="resolve('${esc(p.id)}')">Enregistrer</button><button class="b ko sm" style="margin:8px 0 0 8px" onclick="delProb('${esc(p.id)}')">Supprimer</button></details>`:""}</div>`}
 function rp(){
   if(!admin){return}
   const op=S.probs.filter(p=>p.statut!=="résolu").sort((a,b)=>b.date-a.date);
@@ -143,7 +145,8 @@ function sendProb(t,n,c){const id=crypto.randomUUID();
     fetch("/.netlify/functions/agenda",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})}).catch(()=>{})},"Réparation signalée, merci !")}
 function addPr(){const nom=$("n_n").value.trim(),pre=$("n_p").value.trim();if(!nom||!pre)return toast("Nom et prénom requis.");
   const id=slug(nom+"-"+pre);if(S.pr.some(p=>p.id===id))return toast("Ce pratiquant existe déjà.");
-  w(async()=>{const {error}=await DB.from("pratiquants").insert({id,nom,prenom:pre});if(error)throw error;$("n_n").value="";$("n_p").value=""},"Pratiquant ajouté")}
+  const nav=[...document.querySelectorAll("#n_s input:checked")].map(x=>x.value);
+  w(async()=>{const {error}=await DB.from("pratiquants").insert({id,nom,prenom:pre,naissance:$("n_d").value||null,navigation:nav});if(error)throw error;$("n_n").value="";$("n_p").value="";$("n_d").value="";document.querySelectorAll("#n_s input").forEach(x=>x.checked=false)},"Pratiquant ajouté")}
 function delPr(id){if(!confirm("Supprimer ce pratiquant ?"))return;w(async()=>{const {error}=await DB.from("pratiquants").delete().eq("id",id);if(error)throw error},"Pratiquant supprimé")}
 function declare(){
   const t=$("p_t").value,n=$("p_n").value,c=$("p_c").value.trim();
@@ -160,20 +163,73 @@ function addBoat(){
   const id=slug(t+"-"+n);if(S.boats.some(b=>b.id===id))return toast("Ce bateau existe déjà.");
   w(async()=>{const {error}=await DB.from("materiel").insert({id,type:t,numero:n});if(error)throw error;$("m_n").value=""},"Bateau ajouté");
 }
-function importCsv(){
-  const f=$("csv").files[0];if(!f)return toast("Choisissez un fichier CSV.");
-  const r=new FileReader();r.onload=()=>w(async()=>{
-    const lines=String(r.result).replace(/^\uFEFF/,"").split(/\r?\n/).filter(l=>l.trim());
-    let add=0;const rows=[];
-    for(const l of lines){
-      const c=l.split(l.includes(";")?";":",").map(x=>x.trim().replace(/^"|"$/g,""));
-      if(c.length<2||!c[0]||!c[1]||/^nom$/i.test(c[0]))continue;
-      const id=slug(c[0]+"-"+c[1]);if(S.pr.some(p=>p.id===id)||rows.some(x=>x.id===id))continue;
-      rows.push({id,nom:c[0],prenom:c[1]});add++;
-    }
-    if(rows.length){const {error}=await DB.from("pratiquants").upsert(rows);if(error)throw error}
-    toast(add+" pratiquant(s) importé(s)");$("csv").value="";
-  });r.readAsText(f,"utf-8");
+const SUPPORTS=["Catamaran","Dériveur","Optimist","Planche à voile","Windfoil"];
+$("n_s").innerHTML=SUPPORTS.map(x=>`<label style="display:inline-flex;gap:6px;align-items:center;margin:4px 14px 4px 0;color:var(--tx)"><input type="checkbox" style="width:22px;height:22px" value="${x}">${x}</label>`).join("");
+const fmtD=iso=>iso?String(iso).split("-").reverse().join("/"):"";
+const norm=x=>String(x??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const yes=v=>{const t=norm(v);return t!==""&&!["non","no","false","faux","0","n","none"].includes(t)};
+function hint(){const p=S.pr.find(x=>x.id===$("d_p").value);$("d_hint").textContent=p?"Supports autorisés : "+((p.navigation||[]).join(", ")||"non renseignés"):""}
+function parseCsv(t){
+  const first=t.split(/\r?\n/)[0]||"";
+  const d=[";","\t",","].sort((a,b)=>first.split(b).length-first.split(a).length)[0];
+  const rows=[];let row=[],c="",q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+    else if(ch==='"')q=true;
+    else if(ch===d){row.push(c);c=""}
+    else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&t[i+1]==="\n")i++;row.push(c);c="";rows.push(row);row=[]}
+    else c+=ch}
+  if(c!==""||row.length){row.push(c);rows.push(row)}
+  return rows.filter(r=>r.some(x=>String(x).trim()))}
+function toIso(v){
+  if(v===""||v==null)return null;
+  const p=n=>String(n).padStart(2,"0");
+  if(typeof v==="number"&&v>1&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return d.getUTCFullYear()+"-"+p(d.getUTCMonth()+1)+"-"+p(d.getUTCDate())}
+  const s=String(v).trim();let m;
+  if(m=s.match(/^(\d{4})-(\d{2})-(\d{2})/))return m[1]+"-"+m[2]+"-"+m[3];
+  if(m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/)){let y=+m[3];if(y<100)y+=y>30?1900:2000;return y+"-"+p(m[2])+"-"+p(m[1])}
+  return null}
+async function importCsv(){
+  const f=$("csv").files[0];if(!f)return toast("Choisissez un fichier.");
+  let g;
+  try{
+    if(/\.xlsx?$/i.test(f.name)){const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});g=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:""})}
+    else{const b=await f.arrayBuffer();let t=new TextDecoder("utf-8").decode(b);if(t.includes("\uFFFD"))t=new TextDecoder("windows-1252").decode(b);g=parseCsv(t.replace(/^\uFEFF/,""))}
+  }catch(e){return toast("Fichier illisible.")}
+  const H=(g[0]||[]).map(norm),ix=n=>H.indexOf(norm(n));
+  const hasH=ix("Nom")>=0;
+  const I={nom:hasH?ix("Nom"):0,pre:hasH?ix("Prénom"):1,nai:ix("Date de naissance"),id:ix("ID du Contact"),nl:ix("Navigation libre")};
+  const rows=new Map();let skip=0;
+  for(const r of g.slice(hasH?1:0)){
+    const nom=String(r[I.nom]??"").trim(),pre=String(r[I.pre]??"").trim();if(!nom||!pre)continue;
+    if(I.nl>=0&&!yes(r[I.nl])){skip++;continue}
+    const id=slug(nom+"-"+pre);
+    rows.set(id,{id,nom,prenom:pre,naissance:I.nai>=0?toIso(r[I.nai]):null,navigation:SUPPORTS.filter(x=>ix(x)>=0&&yes(r[ix(x)])),contact_id:I.id>=0?String(r[I.id]):null});
+  }
+  const list=[...rows.values()];
+  if(!list.length)return toast("Aucun pratiquant à importer"+(skip?" ("+skip+" sans « Navigation libre »)":"")+".");
+  if(!confirm(list.length+" pratiquant(s) à importer ou mettre à jour"+(skip?", "+skip+" ignoré(s) car « Navigation libre » n’est pas renseigné":"")+". Continuer ?"))return;
+  w(async()=>{for(let i=0;i<list.length;i+=500){const {error}=await DB.from("pratiquants").upsert(list.slice(i,i+500));if(error)throw error}$("csv").value=""},list.length+" pratiquant(s) importé(s)");
+}
+function delProb(id){if(!confirm("Supprimer définitivement ce problème ?"))return;
+  w(async()=>{const {data,error}=await DB.from("problemes").delete().eq("id",id).select();if(error)throw error;if(!data||!data.length)throw new Error("suppression refusée (exécutez migration-v3.sql dans Supabase)")},"Problème supprimé")}
+async function fetchAll(t,o){let all=[],a=0;for(;;){const {data,error}=await DB.from(t).select("*").order(o,{ascending:false}).range(a,a+999);if(error)throw error;all=all.concat(data);if(data.length<1000)break;a+=1000}return all}
+const dOf=ms=>{const d=new Date(ms);return new Date(d.getFullYear(),d.getMonth(),d.getDate(),12)};
+const hm=ms=>ms?new Date(ms).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"";
+async function exportXlsx(){
+  if(!DB||!admin)return;
+  try{
+    const [dp,pb]=await Promise.all([fetchAll("departs","depart"),fetchAll("problemes","date")]);
+    const nav=dp.map(d=>({"Date":dOf(d.depart),"Pratiquant":d.nom,"Type de bateau":d.type,"Numéro":d.numero,"Heure de départ":hm(d.depart),"Heure de retour":hm(d.retour),"Durée":d.retour?dur(d.retour-d.depart):"","Statut":d.statut==="en_mer"?"Sur l’eau":"Rentré","Remarque":d.note||""}));
+    const rep=pb.map(p=>({"Date de signalement":dOf(p.date),"Type de bateau":p.type,"Numéro":p.numero,"Problème":p.commentaire,"Statut":p.statut,"Résolution":p.resolution||"","Date de clôture":p.dateres?dOf(p.dateres):""}));
+    const wb=XLSX.utils.book_new();
+    [["Navigations",nav,["A"]],["Réparations",rep,["A","G"]]].forEach(([n,rows,cols])=>{
+      const ws=XLSX.utils.json_to_sheet(rows,{cellDates:true});
+      cols.forEach(c=>{for(let i=2;i<=rows.length+1;i++){const x=ws[c+i];if(x&&x.t==="d")x.z="dd/mm/yyyy"}});
+      ws["!cols"]=Object.keys(rows[0]||{}).map(k=>({wch:Math.max(14,k.length+2)}));
+      XLSX.utils.book_append_sheet(wb,ws,n)});
+    XLSX.writeFile(wb,"export-club-"+new Date().toISOString().slice(0,10)+".xlsx",{cellDates:true});
+  }catch(e){toast("Export impossible : "+(e.message||e))}
 }
 const TABLES={pr:"pratiquants",boats:"materiel",deps:"departs",probs:"problemes"};
 async function load(){
