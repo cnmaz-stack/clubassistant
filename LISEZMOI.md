@@ -29,3 +29,13 @@ Netlify > Add new site > Deploy manually : glisser-déposer le dossier `netlify-
      - `GOOGLE_SERVICE_ACCOUNT_JSON` : le contenu complet du fichier JSON
      - `GOOGLE_CALENDAR_ID` : `contact@cnmaz.fr` (valeur par défaut)
    - Redéployer. La fonction (`netlify/functions/agenda.js`) n’est prise en compte que par un déploiement via Git (pas par glisser-déposer).
+
+## Mise à jour v3 (export Excel, date de naissance, supports, suppression de problèmes, import AssoConnect)
+1. Supabase > SQL Editor : exécuter `migration-v3.sql` (nouvelles colonnes + droit de suppression des problèmes).
+2. Remplacer `index.html` dans le dépôt, puis laisser Netlify redéployer.
+3. Import : Administration > « Importer le fichier » accepte directement l’export AssoConnect (.xlsx ou .csv).
+
+## Plein écran
+- Installée sur l’écran d’accueil (Android : « Installer l’application » ; iPad/iPhone : Partager > « Sur l’écran d’accueil »), l’appli s’ouvre sans barre de navigateur, en plein écran.
+- Dans un navigateur, le premier appui sur l’écran passe en plein écran (un navigateur l’interdit sans action de l’utilisateur) ; le bouton ⛶ en haut à droite permet d’y entrer ou d’en sortir.
+- Fichiers ajoutés : `manifest.webmanifest`, `sw.js`, `icon-512.png`.

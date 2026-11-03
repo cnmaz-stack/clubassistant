@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Club Nautique Mazerolles – Navigation libre &amp; maintenance</title><link rel="icon" href="logo.png"><link rel="apple-touch-icon" href="logo.png">
+<title>Club Nautique Mazerolles – Navigation libre &amp; maintenance</title><link rel="icon" href="logo.png"><link rel="apple-touch-icon" href="logo.png"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#13306b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="CNM Voile"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 :root{--bg:#f3f6f9;--card:#fff;--tx:#12263a;--mu:#5d6f80;--bd:#d5dde5;--pr:#13306b;--ok:#1d8a4e;--ko:#c0392b;--wa:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a26;--card:#17283a;--tx:#e8eff6;--mu:#93a6b8;--bd:#2c4258;--pr:#4aa3e8}}
@@ -34,7 +34,7 @@ details summary{cursor:pointer;font-weight:600;padding:10px 0;color:var(--pr)}
 table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--bd);vertical-align:top}.sc{overflow-x:auto;max-height:420px;overflow-y:auto}
 #msg{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#12263a;color:#fff;padding:12px;border-radius:10px;display:none;z-index:9}
 </style></head><body>
-<header><span class="brand"><img src="logo.png" alt="Logo CNM"> Club Nautique Mazerolles</span><span><small id="who"></small> <button id="lg" onclick="lgClick()" style="margin-left:8px;padding:8px 12px;font-size:14px;border-radius:8px;border:1px solid #fff;background:transparent;color:#fff">Admin</button></span></header>
+<header><span class="brand"><img src="logo.png" alt="Logo CNM"> Club Nautique Mazerolles</span><span><small id="who"></small> <button id="fsb" onclick="toggleFs()" title="Plein écran" style="padding:8px 12px;font-size:16px;border-radius:8px;border:1px solid #fff;background:transparent;color:#fff">⛶</button> <button id="lg" onclick="lgClick()" style="margin-left:8px;padding:8px 12px;font-size:14px;border-radius:8px;border:1px solid #fff;background:transparent;color:#fff">Admin</button></span></header>
 <nav><button id="t1" class="on" onclick="tab(1)">Navigation libre</button><button id="t2" onclick="tab(2)">Matériel</button><button id="t3" class="admin hide" onclick="tab(3)">Administration</button></nav>
 <div id="login" class="card hide" style="margin:10px 12px 0"><img src="logo.png" alt="" style="height:64px;display:block;margin:0 auto 8px"><h2>Connexion administrateur</h2>
 <label>E-mail</label><input id="lg_e" type="email" autocomplete="username"><label>Mot de passe</label><input id="lg_p" type="password" autocomplete="current-password">
@@ -247,6 +247,13 @@ async function load(){
   render();
 }
 async function setAdmin(session){admin=!!session;$("lg").textContent=admin?"Déconnexion":"Admin";if(!admin&&!$("p3").classList.contains("hide"))tab(1);await load()}
+const standalone=matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches||navigator.standalone;
+const rf=document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen;
+function fs(){if(standalone||!rf||document.fullscreenElement||document.webkitFullscreenElement)return;try{const r=rf.call(document.documentElement);if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+function toggleFs(){if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document);else fs()}
+if(standalone||!rf)$("fsb").style.display="none";
+addEventListener("click",fs,{once:true,capture:true});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 function lgClick(){if(admin)DB&&DB.auth.signOut();else $("login").classList.toggle("hide")}
 async function login(){
   if(!DB)return toast("Base non configurée.");
